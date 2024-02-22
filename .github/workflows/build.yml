@@ -11,9 +11,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v14
+        with:
+          name: devenv
+      - name: Install devenv
+        run: nix-env -if https://install.devenv.sh/latest
+      - name: Run checks
+        run: devenv ci
+
   build:
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [check]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
