@@ -18,11 +18,13 @@ jobs:
         with:
           ref: main
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v9
-      - name: Install tools via Nix
-        run: nix develop --impure --check
+        uses: cachix/install-nix-action@v25
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v14
+        with:
+          name: devenv
       - name: Update versions
-        run: nix develop --impure --command python3 update-versions.py
+        run: devenv shell update_versions
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
       - name: Create pull request
