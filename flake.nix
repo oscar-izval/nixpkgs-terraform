@@ -2,57 +2,58 @@
   description = "A collection of Terraform versions that are automatically updated";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
-    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-
-    systems.url = "github:nix-systems/default";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
+    systems.url = "github:nix-systems/default";
   };
 
-  outputs = { self, flake-parts, ... }@inputs: flake-parts.lib.mkFlake { inherit inputs; } {
-    imports = [
-      inputs.flake-parts.flakeModules.easyOverlay
-    ];
-    systems = import inputs.systems;
+  outputs = { self, flake-parts, ... }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        inputs.flake-parts.flakeModules.easyOverlay
+      ];
 
-    perSystem = { config, pkgs, pkgs-unstable, system, ... }: {
-      _module.args = {
-        pkgs-unstable = inputs.nixpkgs-unstable.legacyPackages.${system};
-      };
+      systems = import inputs.systems;
 
-      packages = import ./lib/packages.nix { inherit pkgs pkgs-unstable; custom-lib = self.lib; };
-
-      overlayAttrs = {
-        terraform-versions = config.packages;
-      };
-
-      devShells.default = pkgs.mkShell {
-        buildInputs = [
-          pkgs-unstable.black
-          (pkgs-unstable.python3.withPackages (ps: [
-            ps.pygithub
-            ps.semver
-          ]))
-          pkgs-unstable.nix-prefetch
-          pkgs.nodejs
-          pkgs.rubyPackages.dotenv
-        ];
-      };
-    };
-
-    flake = {
-      templates = {
-        default = {
-          description = "Simple nix-shell with Terraform installed via nixpkgs-terraform";
-          path = ./templates/default;
+      perSystem = { config, pkgs, pkgs-unstable, system, ... }: {
+        _module.args = {
+          pkgs-unstable = inputs.nixpkgs-unstable.legacyPackages.${system};
         };
-        devenv = {
-          description = "Using nixpkgs-terraform with devenv";
-          path = ./templates/devenv;
+
+        packages = import ./lib/packages.nix { inherit pkgs pkgs-unstable; custom-lib = self.lib; };
+
+        overlayAttrs = {
+          terraform-versions = config.packages;
+        };
+
+        devShells.default = pkgs.mkShell {
+          buildInputs = [
+            pkgs-unstable.black
+            (pkgs-unstable.python3.withPackages (ps: [
+              ps.pygithub
+              ps.semver
+            ]))
+            pkgs-unstable.nix-prefetch
+            pkgs.nodejs
+            pkgs.rubyPackages.dotenv
+          ];
         };
       };
 
-      lib = import ./lib;
+      flake = {
+        templates = {
+          default = {
+            description = "Simple nix-shell with Terraform installed via nixpkgs-terraform";
+            path = ./templates/default;
+          };
+          devenv = {
+            description = "Using nixpkgs-terraform with devenv";
+            path = ./templates/devenv;
+          };
+        };
+
+        lib = import ./lib;
+      };
     };
-  };
 }
